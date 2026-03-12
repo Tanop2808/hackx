@@ -14,7 +14,45 @@ export async function POST(req: NextRequest) {
     result = await runAITriage(symptoms);
   } catch (err) {
     console.error("AI triage failed, using fallback:", err);
-    result = fallbackTriage(symptoms);
+
+    const idMap: Record<string, string> = {
+      "Fever": "fever",
+      "Chest Pain": "chest",
+      "Breathlessness": "breath",
+      "Cough": "cough",
+      "Cold / Runny Nose": "cold",
+      "Headache": "headache",
+      "Vomiting": "vomit",
+      "Diarrhea": "diarrhea",
+      "Skin Rash": "rash",
+      "Joint Pain": "pain",
+      "Weakness": "weakness",
+      "Stomach Pain": "stomach",
+      "Eye Problem": "eyes",
+      "Back Pain": "back",
+      "Dizziness": "dizzy",
+      "Swelling": "swelling",
+      "Chills / Shivering": "chills",
+      "Body Ache": "body_ache",
+      "Excessive Sweating": "sweat",
+      "Burning Urination": "urine_burn",
+      "Nausea": "nausea",
+      "Unconsciousness": "unconscious",
+      "Seizures": "seizure",
+      "Unusual Bleeding": "bleed",
+    };
+
+    const selectedIds: string[] = [];
+    for (const s of symptoms) {
+      for (const [name, id] of Object.entries(idMap)) {
+        if (s.includes(name)) {
+          selectedIds.push(id);
+          break;
+        }
+      }
+    }
+
+    result = fallbackTriage(selectedIds);
   }
 
   // Save consultation to DB
