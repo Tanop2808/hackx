@@ -1,71 +1,82 @@
-// ──────────────────────────────────────────────────────────
-//  SehatSetu Seed Script
-//  Run: node scripts/seed.js
-// ──────────────────────────────────────────────────────────
 const mongoose = require("mongoose");
 require("dotenv").config({ path: ".env.local" });
 
-const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) { console.error("❌ Set MONGODB_URI in .env.local"); process.exit(1); }
-
-const PatientSchema = new mongoose.Schema({ phone: String, name: String, age: Number, gender: String, village: String, conditions: [String], bloodGroup: String, role: { type: String, default: "patient" } }, { timestamps: true });
-const DoctorSchema  = new mongoose.Schema({ email: String, passwordHash: String, name: String, specialization: String, hospital: String, role: { type: String, default: "doctor" } }, { timestamps: true });
-const PharmacySchema = new mongoose.Schema({ name: String, village: String, district: String, phone: String, lat: Number, lng: Number, medicines: [{ name: String, qty: Number, inStock: Boolean }] });
-const ASHAWorkerSchema = new mongoose.Schema({ phone: String, name: String, villages: [String], role: { type: String, default: "ashaworker" } }, { timestamps: true });
-
-const Patient    = mongoose.model("Patient", PatientSchema);
-const Doctor     = mongoose.model("Doctor", DoctorSchema);
-const Pharmacy   = mongoose.model("Pharmacy", PharmacySchema);
-const ASHAWorker = mongoose.model("ASHAWorker", ASHAWorkerSchema);
-
-const bcrypt = require("bcryptjs");
+const URI = process.env.MONGODB_URI;
 
 async function seed() {
-  await mongoose.connect(MONGODB_URI);
-  console.log("✅ Connected to MongoDB");
+  console.log("Connecting to MongoDB...");
+  console.log("URI found:", URI ? "YES" : "NO — check .env.local");
+
+  await mongoose.connect(URI);
+  console.log("✅ Connected to MongoDB Atlas");
+
+  const db = mongoose.connection.db;
 
   // Clear existing
-  await Promise.all([Patient.deleteMany({}), Doctor.deleteMany({}), Pharmacy.deleteMany({}), ASHAWorker.deleteMany({})]);
+  await db.collection("patients").deleteMany({});
+  await db.collection("doctors").deleteMany({});
+  await db.collection("ashavisits").deleteMany({});
+  console.log("🗑️  Cleared old data");
 
-  // Patients
-  await Patient.insertMany([
-    { phone: "9876501001", name: "रामकली देवी", age: 52, gender: "female", village: "Kesri", conditions: ["Type 2 Diabetes"], bloodGroup: "B+" },
-    { phone: "9876501002", name: "सुरेश कुमार", age: 38, gender: "male", village: "Nabha Sector 4", conditions: [], bloodGroup: "O+" },
-    { phone: "9876501003", name: "गीता रानी", age: 65, gender: "female", village: "Kesri", conditions: ["Hypertension"], bloodGroup: "A+" },
-    { phone: "9876501004", name: "हरजीत सिंह", age: 71, gender: "male", village: "Barnala Road", conditions: ["Heart disease"], bloodGroup: "B-" },
+  // Seed patients
+  await db.collection("patients").insertMany([
+    { phone: "9876501001", name: "रामकली देवी", age: "52", gender: "female", village: "Kesri", bloodGroup: "B+", conditions: "Diabetes", createdAt: new Date() },
+    { phone: "9876501002", name: "सुरेश कुमार", age: "38", gender: "male", village: "Nabha Sector 4", bloodGroup: "O+", conditions: "", createdAt: new Date() },
+    { phone: "9876501003", name: "गीता रानी", age: "65", gender: "female", village: "Kesri", bloodGroup: "A+", conditions: "BP", createdAt: new Date() },
+    { phone: "9876501004", name: "हरजीत सिंह", age: "71", gender: "male", village: "Barnala Road", bloodGroup: "", conditions: "Arthritis", createdAt: new Date() },
+    { phone: "9876501005", name: "मीना देवी", age: "29", gender: "female", village: "Barnala Road", bloodGroup: "AB+", conditions: "", createdAt: new Date() },
   ]);
   console.log("✅ Patients seeded");
 
-  // Doctors
-  const hash = await bcrypt.hash("doctor123", 10);
-  await Doctor.insertMany([
-    { email: "doctor@sehat.com", passwordHash: hash, name: "Dr. Arvind Kumar", specialization: "General Physician", hospital: "Nabha Civil Hospital" },
+  // Seed doctors
+  await db.collection("doctors").insertMany([
+    {
+      doctorId: "D1",
+      name: "Dr. Arvind Kumar",
+      specialization: "General Physician",
+      hospital: "Nabha Civil Hospital",
+      phone: "9876600001",
+      email: "doctor@sehat.com",
+      availableSlots: ["9:00 AM", "9:30 AM", "10:30 AM", "11:00 AM", "2:00 PM", "3:30 PM"],
+      bookedSlots: [],
+      isAvailable: true,
+      createdAt: new Date()
+    },
+    {
+      doctorId: "D2",
+      name: "Dr. Sunita Sharma",
+      specialization: "Pediatrician",
+      hospital: "PHC Kesri",
+      phone: "9876600002",
+      email: "sunita@sehat.com",
+      availableSlots: ["9:30 AM", "11:00 AM", "3:00 PM", "4:00 PM"],
+      bookedSlots: [],
+      isAvailable: true,
+      createdAt: new Date()
+    },
+    {
+      doctorId: "D3",
+      name: "Dr. Ravi Patel",
+      specialization: "Cardiologist",
+      hospital: "District Hospital",
+      phone: "9876600003",
+      email: "ravi@sehat.com",
+      availableSlots: ["10:00 AM", "11:30 AM", "4:30 PM"],
+      bookedSlots: [],
+      isAvailable: true,
+      createdAt: new Date()
+    },
   ]);
-  console.log("✅ Doctor seeded: doctor@sehat.com / doctor123");
+  console.log("✅ Doctors seeded");
 
-  // ASHA Workers
-  await ASHAWorker.insertMany([
-    { phone: "9876502001", name: "Priya Sharma", villages: ["Kesri", "Nabha Sector 4", "Barnala Road"] },
-  ]);
-  console.log("✅ ASHA Worker seeded: 9876502001");
+  console.log("\n🎉 All done! Your MongoDB Atlas database is ready.");
+  console.log("Go to Atlas → Browse Collections to verify.");
 
-  // Pharmacies
-  await Pharmacy.insertMany([
-    { name: "Nabha Medical Store", village: "Nabha", district: "Nabha", phone: "9876500001", lat: 30.3567, lng: 76.1543,
-      medicines: [{ name: "Paracetamol", qty: 200, inStock: true }, { name: "Metformin", qty: 50, inStock: true }, { name: "ORS", qty: 500, inStock: true }, { name: "Amoxicillin", qty: 0, inStock: false }] },
-    { name: "Punjab Pharmacy", village: "Kesri", district: "Nabha", phone: "9876500002", lat: 30.3612, lng: 76.1678,
-      medicines: [{ name: "Paracetamol", qty: 100, inStock: true }, { name: "Metformin", qty: 0, inStock: false }, { name: "ORS", qty: 300, inStock: true }, { name: "Amoxicillin", qty: 80, inStock: true }] },
-    { name: "Sharma Medical", village: "Barnala Road", district: "Nabha", phone: "9876500003", lat: 30.3489, lng: 76.1423,
-      medicines: [{ name: "Paracetamol", qty: 150, inStock: true }, { name: "Metformin", qty: 80, inStock: true }, { name: "ORS", qty: 0, inStock: false }, { name: "Amoxicillin", qty: 60, inStock: true }] },
-  ]);
-  console.log("✅ Pharmacies seeded");
-
-  console.log("\n🎉 Seed complete!\n");
-  console.log("Demo credentials:");
-  console.log("  Patient:  9876501001 (Ramkali Devi)");
-  console.log("  Doctor:   doctor@sehat.com / doctor123");
-  console.log("  ASHA:     9876502001 (Priya Sharma)");
+  await mongoose.disconnect();
   process.exit(0);
 }
 
-seed().catch(e => { console.error(e); process.exit(1); });
+seed().catch(err => {
+  console.error("❌ Seed failed:", err.message);
+  process.exit(1);
+});

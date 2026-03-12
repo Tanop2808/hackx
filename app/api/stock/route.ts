@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import { Pharmacist } from "@/models/index";
 
+// GET /api/medicines/search?name=Paracetamol
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
@@ -12,9 +13,9 @@ export async function GET(req: NextRequest) {
       "stock.medicineName": { $regex: name, $options: "i" },
     });
 
-    const results = pharmacists.map((p: any) => {
+    const results = pharmacists.map(p => {
       const med = p.stock.find(
-        (s: any) => s.medicineName.toLowerCase().includes(name.toLowerCase())
+        s => s.medicineName.toLowerCase().includes(name.toLowerCase())
       );
       return {
         pharmacyId:   p._id,
@@ -28,11 +29,10 @@ export async function GET(req: NextRequest) {
         price:        med?.price || "Ask at counter",
         inStock:      med?.inStock || false,
       };
-    }).sort((a: any, b: any) => (b.inStock ? 1 : 0) - (a.inStock ? 1 : 0));
+    }).sort((a, b) => (b.inStock ? 1 : 0) - (a.inStock ? 1 : 0));
 
     return NextResponse.json({ results });
-  } catch (err) {
-    console.error("GET /api/medicines/search error:", err);
+  } catch {
     return NextResponse.json({ results: [] });
   }
 }

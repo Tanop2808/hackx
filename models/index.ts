@@ -99,3 +99,55 @@ const PharmacySchema = new Schema<IPharmacy>({
 
 export const Pharmacy: Model<IPharmacy> =
   mongoose.models.Pharmacy || mongoose.model<IPharmacy>("Pharmacy", PharmacySchema);
+
+  // ── Pharmacist (store owner login) ───────────────────────
+export interface IPharmacist extends Document {
+  phone: string;
+  name: string;
+  storeName: string;
+  village: string;
+  district: string;
+  address: string;
+  licenseNumber: string;
+  distanceKm: string;
+  type: "Govt Free" | "Jan Aushadhi" | "Private";
+  stock: Array<{
+    medicineName: string;
+    qty: number;
+    minRequired: number;
+    price: string;
+    inStock: boolean;
+  }>;
+  isVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const PharmacistSchema = new Schema<IPharmacist>(
+  {
+    phone:         { type: String, required: true, unique: true, index: true },
+    name:          { type: String, required: true },
+    storeName:     { type: String, required: true },
+    village:       { type: String, required: true },
+    district:      { type: String, default: "Nabha" },
+    address:       { type: String, default: "" },
+    licenseNumber: { type: String, default: "" },
+    distanceKm:    { type: String, default: "0" },
+    type:          { type: String, enum: ["Govt Free", "Jan Aushadhi", "Private"], default: "Private" },
+    stock: [
+      {
+        medicineName: { type: String, required: true },
+        qty:          { type: Number, default: 0 },
+        minRequired:  { type: Number, default: 30 },
+        price:        { type: String, default: "Ask at counter" },
+        inStock:      { type: Boolean, default: false },
+      },
+    ],
+    isVerified: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+export const Pharmacist: Model<IPharmacist> =
+  mongoose.models.Pharmacist || mongoose.model<IPharmacist>("Pharmacist", PharmacistSchema);
+
