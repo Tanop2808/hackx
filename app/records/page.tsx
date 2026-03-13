@@ -1,18 +1,43 @@
 "use client";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/useAuth";
 
 const C = { primary: "#1B6CA8", primaryDark: "#0F4C7A", green: "#1E8449", red: "#C0392B", yellow: "#F39C12", bg: "#F0F4F8", card: "#FFFFFF", text: "#1A2332", muted: "#6B7C93", border: "#DDE3EC" };
 
 export default function RecordsPage() {
   const router = useRouter();
-  const lang = typeof window !== "undefined" ? localStorage.getItem("lang") || "hi" : "hi";
+  const { user, loading } = useAuth();
+  const [lang, setLang] = useState("hi");
+
   const t = (hi: string, en: string) => lang === "hi" ? hi : en;
+
+  useEffect(() => {
+    setLang(localStorage.getItem("lang") || "hi");
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
 
   const history = [
     { dot: C.red, cond: t("🔴 बुखार + सीने में दर्द", "🔴 Fever + Chest Pain"), date: t("आज · 11:42 AM · Sync बाकी", "Today · 11:42 AM · Pending sync"), rx: t("⏳ डॉक्टर से जवाब का इंतज़ार", "⏳ Awaiting doctor response"), rxColor: C.red },
     { dot: C.yellow, cond: t("🟡 बुखार + खांसी + जुकाम", "🟡 Fever + Cough + Cold"), date: t("15 फ़र 2026 · पूर्ण", "15 Feb 2026 · Completed"), rx: "💊 Rx: Paracetamol 500mg + Cough Syrup", rxColor: C.green },
     { dot: C.green, cond: t("🟢 सिरदर्द + थकान", "🟢 Headache + Fatigue"), date: t("3 जन 2026 · पूर्ण", "3 Jan 2026 · Completed"), rx: t("💊 Rx: आराम करें + पानी पिएं", "💊 Rx: Rest + Plenty of water"), rxColor: C.green },
   ];
+
+  if (loading) {
+    return (
+      <div style={{ background: "#0d1520", minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <div style={{ fontSize: 20 }}>⏳ {t("लोड हो रहा है", "Loading...")}</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  const initial = user.name.charAt(0).toUpperCase();
 
   return (
     <div style={{ background: "#0d1520", minHeight: "100vh", display: "flex", justifyContent: "center" }}>
@@ -32,14 +57,20 @@ export default function RecordsPage() {
           {/* Profile card */}
           <div style={{ background: C.card, borderRadius: 16, border: `1px solid ${C.border}`, overflow: "hidden", marginBottom: 14 }}>
             <div style={{ background: "linear-gradient(135deg,#EBF4FD,#DDEEFF)", padding: 14, display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 52, height: 52, borderRadius: "50%", background: C.primary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 800, color: "white", flexShrink: 0 }}>R</div>
+              <div style={{ width: 52, height: 52, borderRadius: "50%", background: C.primary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 800, color: "white", flexShrink: 0 }}>{initial}</div>
               <div>
-                <div style={{ fontSize: 18, fontWeight: 800 }}>{t("रामकली देवी", "Ramkali Devi")}</div>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>Female · 52 years · Kesri · 📱 9876501001</div>
+                <div style={{ fontSize: 18, fontWeight: 800 }}>{user.name}</div>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>
+                  {user.gender === "female" ? t("महिला", "Female") : t("पुरुष", "Male")} · {user.age} {t("वर्ष", "years")} · {user.village} · 📱 {user.phone}
+                </div>
               </div>
             </div>
             <div style={{ padding: "12px 14px", display: "flex", gap: 10 }}>
-              {[{ v: "B+", l: "Blood Group" }, { v: "52", l: t("Age / उम्र", "Age") }, { v: "Diabetes", l: t("Condition", "Condition") }].map((d, i) => (
+              {[
+                { v: user.bloodGroup || "—", l: t("रक्त समूह", "Blood Group") },
+                { v: user.age.toString(), l: t("उम्र", "Age") },
+                { v: user.conditions.length > 0 ? user.conditions[0] : "—", l: t("स्थिति", "Condition") }
+              ].map((d, i) => (
                 <div key={i} style={{ flex: 1, textAlign: "center", padding: 8, background: C.bg, borderRadius: 10 }}>
                   <div style={{ fontSize: 14, fontWeight: 800 }}>{d.v}</div>
                   <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{d.l}</div>

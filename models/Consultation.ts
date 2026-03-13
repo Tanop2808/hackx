@@ -7,6 +7,9 @@ export interface IConsultation extends Document {
   urgency: "RED" | "YELLOW" | "GREEN";
   triageResult: object;
   doctorId?: string;
+  doctorName?: string;
+  slot?: string;
+  queueNo?: string;
   doctorNotes?: string;
   prescription?: string;
   status: "pending" | "in-review" | "completed";
@@ -22,6 +25,9 @@ const ConsultationSchema = new Schema<IConsultation>(
     urgency:      { type: String, enum: ["RED", "YELLOW", "GREEN"], required: true, index: true },
     triageResult: { type: Schema.Types.Mixed, required: true },
     doctorId:     { type: String },
+    doctorName:   { type: String },
+    slot:         { type: String },
+    queueNo:      { type: String },
     doctorNotes:  { type: String },
     prescription: { type: String },
     status:       { type: String, enum: ["pending", "in-review", "completed"], default: "pending" },

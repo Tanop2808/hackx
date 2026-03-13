@@ -26,3 +26,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  const body = await req.json();
+  const { id, status, doctorNotes, prescription } = body;
+  try {
+    await dbConnect();
+    const update: Record<string, unknown> = {};
+    if (status) update.status = status;
+    if (doctorNotes !== undefined) update.doctorNotes = doctorNotes;
+    if (prescription !== undefined) update.prescription = prescription;
+    const consultation = await Consultation.findByIdAndUpdate(id, update, { new: true });
+    if (!consultation) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ consultation });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}

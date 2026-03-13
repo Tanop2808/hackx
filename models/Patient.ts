@@ -8,6 +8,7 @@ export interface IPatient extends Document {
   village: string;
   conditions: string[];
   bloodGroup?: string;
+  password: string;
   role: "patient";
   createdAt: Date;
   updatedAt: Date;
@@ -22,6 +23,7 @@ const PatientSchema = new Schema<IPatient>(
     village:    { type: String, required: true },
     conditions: { type: [String], default: [] },
     bloodGroup: { type: String },
+    password:   { type: String, required: true },
     role:       { type: String, default: "patient" },
   },
   { timestamps: true }

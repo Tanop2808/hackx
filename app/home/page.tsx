@@ -205,39 +205,45 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/useAuth";
 
 const C = { primary: "#1B6CA8", primaryDark: "#0F4C7A", green: "#1E8449", greenLight: "#27AE60", bg: "#F0F4F8", card: "#FFFFFF", text: "#1A2332", muted: "#6B7C93", border: "#DDE3EC", red: "#C0392B" };
 
-interface Patient { name: string; age: string; village: string; phone: string; gender?: string; conditions?: string; bloodGroup?: string; }
-
 export default function HomePage() {
   const router = useRouter();
+  const { user, logout, loading } = useAuth();
   const [lang, setLang] = useState("hi");
-  const [patient, setPatient] = useState<Patient | null>(null);
   const [hasReport, setHasReport] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const storedLang = localStorage.getItem("lang") || "hi";
     setLang(storedLang);
-    const p = localStorage.getItem("patient");
-    if (!p) { router.replace("/login"); return; }
-    try { setPatient(JSON.parse(p)); } catch { router.replace("/login"); return; }
-    setHasReport(!!localStorage.getItem("triageResult"));
-    setHydrated(true);
-  }, [router]);
+
+    if (!loading && !user) {
+      router.push("/login");
+    } else {
+      setHasReport(!!localStorage.getItem("triageResult"));
+    }
+  }, [user, loading, router]);
 
   const t = (hi: string, en: string) => lang === "hi" ? hi : en;
 
-  const pastVisits = hasReport ? 1 : 0;
+  if (loading) {
+    return (
+      <div style={{ background: "#0d1520", minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <div style={{ fontSize: 20 }}>⏳ {t("लोड हो रहा है", "Loading...")}</div>
+      </div>
+    );
+  }
 
-  if (!hydrated || !patient) return null;
+  if (!user) return null;
 
-  const greeting = lang === "hi" ? `नमस्ते ${patient.name.split(" ")[0]} जी 🙏` : `Hello ${patient.name.split(" ")[0]} 🙏`;
+  const greeting = lang === "hi" ? `नमस्ते ${user.name.split(" ")[0]} जी 🙏` : `Hello ${user.name.split(" ")[0]} 🙏`;
   const badges: string[] = [];
-  if (patient.bloodGroup) badges.push(`🩸 ${patient.bloodGroup}`);
-  if (patient.conditions) badges.push(`💊 ${patient.conditions}`);
-  if (patient.age) badges.push(`${patient.age} ${t("वर्ष", "years")}`);
+  if (user.bloodGroup) badges.push(`🩸 ${user.bloodGroup}`);
+  if (user.conditions && user.conditions.length > 0) badges.push(`💊 ${user.conditions[0]}`);
+  if (user.age) badges.push(`${user.age} ${t("वर्ष", "years")}`);
+  const pastVisits = hasReport ? 1 : 0;
 
   return (
     <div style={{ background: "#0d1520", minHeight: "100vh", display: "flex", justifyContent: "center" }}>
@@ -248,12 +254,12 @@ export default function HomePage() {
         </div>
         <div style={{ background: `linear-gradient(135deg,${C.primary},${C.primaryDark})`, padding: "16px 16px 22px", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", right: -10, top: -10, fontSize: 80, opacity: .07 }}>🏥</div>
-          <button onClick={() => { localStorage.clear(); router.replace("/login"); }}
+          <button onClick={logout}
             style={{ position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,.15)", border: "none", borderRadius: 8, color: "rgba(255,255,255,.8)", fontSize: 11, fontWeight: 700, padding: "5px 10px", cursor: "pointer" }}>
             {t("लॉग आउट", "Logout")}
           </button>
           <div style={{ fontSize: 22, fontWeight: 800, color: "white" }}>{greeting}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,.7)", marginTop: 2 }}>{patient.name} · {patient.village}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,.7)", marginTop: 2 }}>{user.name} · {user.village}</div>
           {badges.length > 0 && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,.18)", padding: "6px 12px", borderRadius: 20, fontSize: 12, color: "rgba(255,255,255,.9)", marginTop: 10 }}>
               {badges.join(" · ")}
